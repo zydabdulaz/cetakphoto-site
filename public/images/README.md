@@ -1,0 +1,1 @@
+Add approved real CetakPhoto assets here: hero-studio.webp, service-studio.webp, service-self-studio.webp, service-photobox.webp, print-paper.webp, print-canvas.webp, frame-minimalist.webp, frame-decorative.webp. Demo visuals are used until usage rights and files are confirmed.
