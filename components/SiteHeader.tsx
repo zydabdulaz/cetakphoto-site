@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { whatsappUrl } from '@/lib/whatsapp';
+
 export function SiteHeader() {
   return (
     <header className="site-header">
@@ -11,9 +13,14 @@ export function SiteHeader() {
           <Link href="/#layanan">Layanan</Link>
           <Link href="/#produk">Produk</Link>
           <Link href="/catalog">Catalog</Link>
-          <Link className="button primary" href="/catalog">
-            Buka catalog
-          </Link>
+          <a
+            className="button primary"
+            href={whatsappUrl('layanan CetakPhoto')}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Hubungi kami
+          </a>
         </nav>
       </div>
     </header>
