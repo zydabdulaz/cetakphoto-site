@@ -10,6 +10,11 @@ const serif = Instrument_Serif({
 export const metadata = {
   title: 'CetakPhoto | Foto kamu jadi lebih berarti',
   description: 'Pas foto, cetak foto, studio, self-studio, photobox, canvas, dan frame.',
+  icons: {
+    icon: '/brand/cetakphoto.svg',
+    shortcut: '/brand/cetakphoto.svg',
+    apple: '/brand/cetakphoto.svg',
+  },
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
