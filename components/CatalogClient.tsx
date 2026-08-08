@@ -24,24 +24,60 @@ export function CatalogClient() {
     let sourceCatalog = catalog;
 
     if (liveProducts.length > 0) {
-      // Map DB products into catalog group
-      sourceCatalog = [
-        {
-          id: 'cetak-produk',
-          title: 'Produk Cetak & Layanan Studio',
+      const printItems = liveProducts.filter((p) => (p.category || 'print') === 'print');
+      const frameItems = liveProducts.filter((p) => p.category === 'frame');
+      const serviceItems = liveProducts.filter((p) => p.category === 'service');
+
+      const builtSections: any[] = [];
+
+      if (printItems.length > 0) {
+        builtSections.push({
+          id: 'db-print',
+          title: 'Cetak Foto & Canvas',
           group: 'print',
-          intro: 'Koleksi produk cetak foto, pas foto, frame, & paket studio ter-update dari admin.',
-          items: liveProducts.map((p) => ({
+          intro: 'Koleksi produk cetak kertas foto premium dan kanvas berkualitas galeri.',
+          items: printItems.map((p) => ({
             name: p.name,
             detail: p.description,
             price: `Rp ${p.price.toLocaleString('id-ID')}`,
-            ratio: 'Custom',
-            badge: 'Pilihan Admin',
-            tag: p.name,
             image: p.imageUrl,
           })),
-        },
-      ];
+        });
+      }
+
+      if (frameItems.length > 0) {
+        builtSections.push({
+          id: 'db-frame',
+          title: 'Frame Minimalis & Dekoratif',
+          group: 'frame',
+          intro: 'Koleksi bingkai kayu minimalis, frame 3D, dan kustom siap pajang.',
+          items: frameItems.map((p) => ({
+            name: p.name,
+            detail: p.description,
+            price: `Rp ${p.price.toLocaleString('id-ID')}`,
+            image: p.imageUrl,
+          })),
+        });
+      }
+
+      if (serviceItems.length > 0) {
+        builtSections.push({
+          id: 'db-service',
+          title: 'Jasa Foto Studio, Self-Studio & Photobox',
+          group: 'service',
+          intro: 'Paket pas foto dokumen, sesi foto keluarga, self-studio, dan photobox instan.',
+          items: serviceItems.map((p) => ({
+            name: p.name,
+            detail: p.description,
+            price: `Rp ${p.price.toLocaleString('id-ID')}`,
+            image: p.imageUrl,
+          })),
+        });
+      }
+
+      if (builtSections.length > 0) {
+        sourceCatalog = builtSections;
+      }
     }
 
     return sourceCatalog

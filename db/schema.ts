@@ -17,6 +17,7 @@ export const products = sqliteTable('products', {
   description: text('description').notNull(),
   price: real('price').notNull(),
   imageUrl: text('image_url').notNull(),
+  category: text('category').notNull().default('print'), // print | frame | service
   status: text('status').notNull().default('active'), // active | draft
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),

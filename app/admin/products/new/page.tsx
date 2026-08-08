@@ -12,6 +12,7 @@ export default function NewProductPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [category, setCategory] = useState('print');
   const [status, setStatus] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export default function NewProductPage() {
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, slug, description, price, imageUrl, status }),
+        body: JSON.stringify({ name, slug, description, price, imageUrl, category, status }),
       });
 
       const data = await res.json();
@@ -97,7 +98,7 @@ export default function NewProductPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
               Harga (Rp) *
@@ -110,6 +111,21 @@ export default function NewProductPage() {
               onChange={(e) => setPrice(e.target.value)}
               className="w-full h-11 px-4 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
+              Kategori Produk *
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full h-11 px-4 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="print">Produk Cetak (Kertas, Canvas)</option>
+              <option value="frame">Frame (Minimalis, 3D, Custom)</option>
+              <option value="service">Jasa Foto (Pas Foto, Studio, Photobox)</option>
+            </select>
           </div>
 
           <div>

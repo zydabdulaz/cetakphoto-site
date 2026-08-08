@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, slug, description, price, imageUrl, status } = body;
+    const { name, slug, description, price, imageUrl, category, status } = body;
 
     if (!name || !price || !imageUrl) {
       return NextResponse.json({ success: false, error: 'Nama, harga, dan gambar produk wajib diisi.' }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       description: description || '',
       price: parseFloat(price),
       imageUrl,
+      category: category || 'print',
       status: status || 'active',
       createdAt: now,
       updatedAt: now,
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       action: 'tambah_produk',
       targetType: 'produk',
       targetId: productId,
-      metadata: { name, price, status },
+      metadata: { name, price, category, status },
     });
 
     return NextResponse.json({ success: true, id: productId });
@@ -64,7 +65,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, slug, description, price, imageUrl, status } = body;
+    const { id, name, slug, description, price, imageUrl, category, status } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'ID produk tidak valid.' }, { status: 400 });
@@ -80,6 +81,7 @@ export async function PUT(request: Request) {
         description,
         price: parseFloat(price),
         imageUrl,
+        category: category || 'print',
         status,
         updatedAt: now,
       })
