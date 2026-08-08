@@ -4,8 +4,10 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import * as schema from './schema';
 
+const dbUrl = process.env.DATABASE_URL || (process.env.VERCEL ? 'file:/tmp/cetakphoto.db' : 'file:cetakphoto.db');
+
 const client = createClient({
-  url: process.env.DATABASE_URL || 'file:cetakphoto.db',
+  url: dbUrl,
 });
 
 const db = drizzle(client, { schema });
