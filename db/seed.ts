@@ -47,6 +47,10 @@ async function _seedDatabaseInternal() {
     );
   `);
 
+  try {
+    await client.execute(`ALTER TABLE products ADD COLUMN category TEXT NOT NULL DEFAULT 'print'`);
+  } catch {}
+
   await client.execute(`
     CREATE TABLE IF NOT EXISTS product_images (
       id TEXT PRIMARY KEY,

@@ -127,10 +127,14 @@ export function CatalogClient() {
           <div className="catalog-grid">
             {s.items.map((i) => (
               <article className="catalog-item" key={i.name}>
-                <div className={`catalog-visual ${s.group}`}>
-                  <span>
-                    {s.group === 'print' ? 'Cetak' : s.group === 'frame' ? 'Frame' : 'Jasa'}
-                  </span>
+                <div className={`catalog-visual ${s.group} relative overflow-hidden rounded-2xl`}>
+                  {i.image ? (
+                    <img src={i.image} alt={i.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>
+                      {s.group === 'print' ? 'Cetak' : s.group === 'frame' ? 'Frame' : 'Jasa'}
+                    </span>
+                  )}
                 </div>
                 <div className="item-copy">
                   <div>
