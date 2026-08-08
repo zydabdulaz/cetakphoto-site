@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAdminSession, updateAdminPassword } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: Request) {
   const admin = await getAdminSession();
   if (!admin) {

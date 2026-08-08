@@ -5,6 +5,8 @@ import { eq, asc } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const images = await db.select().from(galleryImages).orderBy(asc(galleryImages.sortOrder));
   return NextResponse.json({ success: true, images });

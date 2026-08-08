@@ -1,8 +1,5 @@
 import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import * as schema from './schema';
 
 const dbUrl = process.env.DATABASE_URL || (process.env.VERCEL ? 'file:/tmp/cetakphoto.db' : 'file:cetakphoto.db');
 
@@ -10,9 +7,16 @@ const client = createClient({
   url: dbUrl,
 });
 
-const db = drizzle(client, { schema });
+let seedPromise: Promise<boolean> | null = null;
 
-export async function seedDatabase() {
+export function seedDatabase(): Promise<boolean> {
+  if (!seedPromise) {
+    seedPromise = _seedDatabaseInternal();
+  }
+  return seedPromise;
+}
+
+async function _seedDatabaseInternal() {
   const now = new Date().toISOString();
 
   // Create SQLite tables if they do not exist
@@ -109,22 +113,15 @@ export async function seedDatabase() {
     );
   `);
 
-  // Seed default admin user if not existing
-  const existingUser = await db.select().from(schema.users).limit(1);
-  if (existingUser.length === 0) {
-    const passwordHash = bcrypt.hashSync('admin123', 10);
-    await db.insert(schema.users).values({
-      id: 'usr_admin_1',
-      email: 'admin@cetakphoto.com',
-      passwordHash,
-      name: 'Admin CetakPhoto',
-      role: 'admin',
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  // Seed default admin user using INSERT OR IGNORE to avoid race conditions
+  const passwordHash = bcrypt.hashSync('admin123', 10);
+  await client.execute({
+    sql: `INSERT OR IGNORE INTO users (id, email, password_hash, name, role, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: ['usr_admin_1', 'admin@cetakphoto.com', passwordHash, 'Admin CetakPhoto', 'admin', now, now],
+  });
 
-  // Seed default settings if not existing
+  // Seed default settings using INSERT OR IGNORE
   const defaultSettings = [
     { key: 'site_name', value: 'CetakPhoto' },
     { key: 'logo_url', value: '/brand/cetakphoto.svg' },
@@ -136,90 +133,66 @@ export async function seedDatabase() {
   ];
 
   for (const s of defaultSettings) {
-    const existing = await db.select().from(schema.settings).where(eq(schema.settings.key, s.key)).limit(1);
-    if (existing.length === 0) {
-      await db.insert(schema.settings).values({
-        id: `stg_${s.key}`,
-        key: s.key,
-        value: s.value,
-        updatedAt: now,
-      });
-    }
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO settings (id, key, value, updated_at) VALUES (?, ?, ?, ?)`,
+      args: [`stg_${s.key}`, s.key, s.value, now],
+    });
   }
 
-  // Seed default products
-  const existingProducts = await db.select().from(schema.products).limit(1);
-  if (existingProducts.length === 0) {
-    const catalogData = [
-      { id: 'p1', name: 'Pas Foto 3x4 / 4x6 Set', slug: 'pas-foto-set', description: 'Paket cetak pas foto resmi 8 lembar dengan kertas foto profesional', price: 25000, imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800' },
-      { id: 'p2', name: 'Foto Studio Family (Express)', slug: 'studio-family-express', description: 'Sesi studio foto keluarga 15 menit dengan lighting studio lengkap', price: 150000, imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800' },
-      { id: 'p3', name: 'Self-Studio Slot 20 Menit', slug: 'self-studio-20m', description: 'Sesi foto bebas dengan remote shutter & unlimited all soft files', price: 95000, imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800' },
-      { id: 'p4', name: 'Photobox Express 2 Strip', slug: 'photobox-2-strip', description: 'Cetak strip instan photobox dengan pilihan background & props', price: 35000, imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800' },
-      { id: 'p5', name: 'Minimalist Frame Wood 12R', slug: 'minimalist-frame-12r', description: 'Frame kayu minimalis warna natural dengan kaca bening anti debu', price: 120000, imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800' },
-      { id: 'p6', name: 'Canvas Fine Art Print 24R', slug: 'canvas-fine-art-24r', description: 'Cetak kanvas HD berkualitas galeri dengan rangka kayu spanram kokoh', price: 350000, imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800' },
-    ];
+  // Seed default products using INSERT OR IGNORE
+  const catalogData = [
+    { id: 'p1', name: 'Pas Foto 3x4 / 4x6 Set', slug: 'pas-foto-set', description: 'Paket cetak pas foto resmi 8 lembar dengan kertas foto profesional', price: 25000, imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800' },
+    { id: 'p2', name: 'Foto Studio Family (Express)', slug: 'studio-family-express', description: 'Sesi studio foto keluarga 15 menit dengan lighting studio lengkap', price: 150000, imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800' },
+    { id: 'p3', name: 'Self-Studio Slot 20 Menit', slug: 'self-studio-20m', description: 'Sesi foto bebas dengan remote shutter & unlimited all soft files', price: 95000, imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800' },
+    { id: 'p4', name: 'Photobox Express 2 Strip', slug: 'photobox-2-strip', description: 'Cetak strip instan photobox dengan pilihan background & props', price: 35000, imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800' },
+    { id: 'p5', name: 'Minimalist Frame Wood 12R', slug: 'minimalist-frame-12r', description: 'Frame kayu minimalis warna natural dengan kaca bening anti debu', price: 120000, imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800' },
+    { id: 'p6', name: 'Canvas Fine Art Print 24R', slug: 'canvas-fine-art-24r', description: 'Cetak kanvas HD berkualitas galeri dengan rangka kayu spanram kokoh', price: 350000, imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800' },
+  ];
 
-    for (const p of catalogData) {
-      await db.insert(schema.products).values({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        description: p.description,
-        price: p.price,
-        imageUrl: p.imageUrl,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
+  for (const p of catalogData) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO products (id, name, slug, description, price, image_url, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [p.id, p.name, p.slug, p.description, p.price, p.imageUrl, 'active', now, now],
+    });
   }
 
-  // Seed default gallery images
-  const existingGallery = await db.select().from(schema.galleryImages).limit(1);
-  if (existingGallery.length === 0) {
-    const galleryItems = [
-      { id: 'g1', imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800', aspectRatio: 0.75, sortOrder: 1 },
-      { id: 'g2', imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800', aspectRatio: 0.75, sortOrder: 2 },
-      { id: 'g3', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=800', aspectRatio: 1.0, sortOrder: 3 },
-      { id: 'g4', imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800', aspectRatio: 0.75, sortOrder: 4 },
-      { id: 'g5', imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200', aspectRatio: 1.333, sortOrder: 5 },
-      { id: 'g6', imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1200', aspectRatio: 1.333, sortOrder: 6 },
-      { id: 'g7', imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800', aspectRatio: 1.0, sortOrder: 7 },
-      { id: 'g8', imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1200', aspectRatio: 1.333, sortOrder: 8 },
-      { id: 'g9', imageUrl: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?q=80&w=800', aspectRatio: 0.75, sortOrder: 9 },
-    ];
+  // Seed default gallery images using INSERT OR IGNORE
+  const galleryItems = [
+    { id: 'g1', imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800', aspectRatio: 0.75, sortOrder: 1 },
+    { id: 'g2', imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800', aspectRatio: 0.75, sortOrder: 2 },
+    { id: 'g3', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=800', aspectRatio: 1.0, sortOrder: 3 },
+    { id: 'g4', imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800', aspectRatio: 0.75, sortOrder: 4 },
+    { id: 'g5', imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200', aspectRatio: 1.333, sortOrder: 5 },
+    { id: 'g6', imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1200', aspectRatio: 1.333, sortOrder: 6 },
+    { id: 'g7', imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800', aspectRatio: 1.0, sortOrder: 7 },
+    { id: 'g8', imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1200', aspectRatio: 1.333, sortOrder: 8 },
+    { id: 'g9', imageUrl: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?q=80&w=800', aspectRatio: 0.75, sortOrder: 9 },
+  ];
 
-    for (const g of galleryItems) {
-      await db.insert(schema.galleryImages).values({
-        id: g.id,
-        imageUrl: g.imageUrl,
-        aspectRatio: g.aspectRatio,
-        sortOrder: g.sortOrder,
-        createdAt: now,
-      });
-    }
+  for (const g of galleryItems) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO gallery_images (id, image_url, aspect_ratio, sort_order, created_at)
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [g.id, g.imageUrl, g.aspectRatio, g.sortOrder, now],
+    });
   }
 
-  // Seed default pages
-  const existingPages = await db.select().from(schema.pages).limit(1);
-  if (existingPages.length === 0) {
-    const pageItems = [
-      { id: 'pg1', slug: 'katalog', title: 'Catalog CetakPhoto', description: 'Semua produk cetak, frame, dan jasa foto studio.', published: 1 },
-      { id: 'pg2', slug: 'outlet', title: 'Outlet & Studio CetakPhoto', description: 'Kunjungi studio fisik kami di Kemang & Grand Indonesia.', published: 1 },
-      { id: 'pg3', slug: 'hero', title: 'Foto kamu, jadi lebih berarti.', description: 'Mulai dari kebutuhan sehari-hari sampai foto dinding.', published: 1 },
-    ];
+  // Seed default pages using INSERT OR IGNORE
+  const pageItems = [
+    { id: 'pg1', slug: 'katalog', title: 'Catalog CetakPhoto', description: 'Semua produk cetak, frame, dan jasa foto studio.', published: 1 },
+    { id: 'pg2', slug: 'outlet', title: 'Outlet & Studio CetakPhoto', description: 'Kunjungi studio fisik kami di Kemang & Grand Indonesia.', published: 1 },
+    { id: 'pg3', slug: 'hero', title: 'Foto kamu, jadi lebih berarti.', description: 'Mulai dari kebutuhan sehari-hari sampai foto dinding.', published: 1 },
+  ];
 
-    for (const pg of pageItems) {
-      await db.insert(schema.pages).values({
-        id: pg.id,
-        slug: pg.slug,
-        title: pg.title,
-        description: pg.description,
-        published: pg.published,
-        updatedAt: now,
-      });
-    }
+  for (const pg of pageItems) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO pages (id, slug, title, description, published, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [pg.id, pg.slug, pg.title, pg.description, pg.published, now],
+    });
   }
 
   return true;
 }
+

@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const allPages = await db.select().from(pages);
   return NextResponse.json({ success: true, pages: allPages });

@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const allSettings = await db.select().from(settings);
   const settingsMap: Record<string, string> = {};
