@@ -106,15 +106,38 @@ interface ImageGalleryProps {
 }
 
 export function ImageGallery({
-  items = defaultGalleryItems,
+  items: customItems,
   className,
 }: ImageGalleryProps) {
+  const [galleryList, setGalleryList] = React.useState<GalleryItem[]>(customItems || defaultGalleryItems);
+
+  React.useEffect(() => {
+    if (customItems) return;
+    fetch('/api/admin/gallery')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.images && data.images.length > 0) {
+          const mapped = data.images.map((img: any) => ({
+            id: img.id,
+            title: 'Hasil Studio CetakPhoto',
+            category: 'studio',
+            categoryLabel: 'Photo Studio',
+            ratio: img.aspectRatio,
+            ratioLabel: Math.abs(img.aspectRatio - 0.75) < 0.1 ? '3:4' : Math.abs(img.aspectRatio - 1.333) < 0.1 ? '4:3' : '1:1',
+            src: img.imageUrl,
+          }));
+          setGalleryList(mapped);
+        }
+      })
+      .catch(() => {});
+  }, [customItems]);
+
   // Auto-arrange algorithm: balance total column height dynamically when photos are added
   const columns = React.useMemo(() => {
     const cols: GalleryItem[][] = [[], [], []];
     const colHeights = [0, 0, 0];
 
-    items.forEach((item) => {
+    galleryList.forEach((item) => {
       // Find column with smallest current cumulative height
       let minColIndex = 0;
       for (let i = 1; i < colHeights.length; i++) {
@@ -132,7 +155,7 @@ export function ImageGallery({
     });
 
     return cols;
-  }, [items]);
+  }, [galleryList]);
 
   return (
     <div className={cn('w-full flex flex-col items-center py-2 px-1', className)}>

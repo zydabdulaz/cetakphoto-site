@@ -5,3 +5,5 @@ out
 .DS_Store
 .agents/
 *.tsbuildinfo
+*.db
+cetakphoto.db

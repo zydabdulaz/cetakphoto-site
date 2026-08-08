@@ -1,23 +1,58 @@
 'use client';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { catalog } from '@/content/catalog';
 import { whatsappUrl } from '@/lib/whatsapp';
 export function CatalogClient() {
-  const [filter, setFilter] = useState('all'),
-    [query, setQuery] = useState('');
-  const sections = useMemo(
-    () =>
-      catalog
-        .map((s) => ({
-          ...s,
-          items: s.items.filter((i) =>
-            (i.name + ' ' + i.detail + ' ' + s.title).toLowerCase().includes(query.toLowerCase())
-          ),
-        }))
-        .filter((s) => (filter === 'all' || s.group === filter) && s.items.length),
-    [filter, query]
-  );
+  const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/admin/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && data.products.length > 0) {
+          const activeOnly = data.products.filter((p: any) => p.status === 'active');
+          setLiveProducts(activeOnly);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const sections = useMemo(() => {
+    let sourceCatalog = catalog;
+
+    if (liveProducts.length > 0) {
+      // Map DB products into catalog group
+      sourceCatalog = [
+        {
+          id: 'cetak-produk',
+          title: 'Produk Cetak & Layanan Studio',
+          group: 'print',
+          intro: 'Koleksi produk cetak foto, pas foto, frame, & paket studio ter-update dari admin.',
+          items: liveProducts.map((p) => ({
+            name: p.name,
+            detail: p.description,
+            price: `Rp ${p.price.toLocaleString('id-ID')}`,
+            ratio: 'Custom',
+            badge: 'Pilihan Admin',
+            tag: p.name,
+            image: p.imageUrl,
+          })),
+        },
+      ];
+    }
+
+    return sourceCatalog
+      .map((s) => ({
+        ...s,
+        items: s.items.filter((i) =>
+          (i.name + ' ' + i.detail + ' ' + s.title).toLowerCase().includes(query.toLowerCase())
+        ),
+      }))
+      .filter((s) => (filter === 'all' || s.group === filter) && s.items.length);
+  }, [filter, query, liveProducts]);
   return (
     <>
       <div className="catalog-toolbar">
